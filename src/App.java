@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,67 +14,91 @@ import json.JsonParser;
 public class App {
     private static final Pattern REGEX_ITEMS = Pattern.compile(".*\\[(.+)\\].*");
     private static final Pattern REGEX_ATRIBUTOS_JSON = Pattern.compile("\"(.+?)\":\"(.*?)\"");
+    private static final String URL = "https://mocki.io/v1/9a7c1ca9-29b4-4eb3-8306-1adb9d159060";
+    private static final Scanner scan = new Scanner(System.in);
 
-    public static void main(String[] args) throws Exception {
-
-        // Fazer conexão HTTP
-        String url = "https://mocki.io/v1/9a7c1ca9-29b4-4eb3-8306-1adb9d159060";
-        String auth = "";
-        URI endereco = URI.create(url + auth);
+    private static String getBody() throws IOException, InterruptedException {
+        URI endereco = URI.create(URL);
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder(endereco)
+        HttpRequest request = HttpRequest
+                .newBuilder(endereco)
                 .GET()
                 .build();
 
         HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
         String body = response.body();
 
-        System.out.println(body);
+        return body;
+    }
 
-        // Extrair informações relevantes
+    private static List<Map<String, String>> parse(String body) {
         JsonParser parser = new JsonParser();
-
         List<Map<String, String>> listaDeFilmes = parser.parse(body);
-        System.out.println(listaDeFilmes.size());
-        System.out.println(listaDeFilmes.get(0));
+        return listaDeFilmes;
+    }
 
-        // Manipular e exibir dados
-        int index = 1;
-        for (Map<String, String> filme : listaDeFilmes) {
-            System.out.println("Posição:    " + index++);
-            System.out.println("Filme:      \u001b[37m\u001b[41m" + filme.get("title") + "\u001b[m");
-            System.out.println("Poster:     " + filme.get("image"));
-            float nota = Float.parseFloat(filme.get("imDbRating"));
-            System.out.println("Nota:       " + filme.get("imDbRating"));
-
-            // Imprimir estrelas
-            for (int i = 0; i < nota; i++) {
-                System.out.print("\u2B50");
-            }
-            System.out.printf("\n\n");
+    private static void printLista(List<Map<String, String>> lista) {
+        int index = 0;
+        for (Map<String, String> filme : lista) {
+            printFilme(filme, index++);
         }
+    }
 
-        System.out.print("Digite a posição de um filme para classificá-lo: ");
-        Scanner scan = new Scanner(System.in);
-        int escolha = scan.nextInt();
+    private static void printFilme(Map<String, String> filme, int posicao) {
+        System.out.println("Posição:    " + ++posicao);
+        System.out.println("Filme:      \u001b[37m\u001b[41m" + filme.get("title") + "\u001b[m");
+        System.out.println("Poster:     " + filme.get("image"));
+        float nota = Float.parseFloat(filme.get("imDbRating"));
+        System.out.println("Nota:       " + filme.get("imDbRating"));
 
-        boolean validador = false;
+        // Imprimir estrelas
+        for (int i = 0; i < nota; i++) {
+            System.out.print("\u2B50");
+        }
+        System.out.printf("\n\n");
+    }
+
+    private static boolean isValid(int escolha, int min, int max) {
+        if (escolha < min || escolha > max) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        
+        boolean validador;
+        int escolha;
+
+        // Fazer conexão HTTP e retornar o body em string
+        String body = getBody();
+
+        // Parsear em uma lista de Map<String, String>
+        var listaDeFilmes = parse(body);
+
+        // Imprimir lista
+        printLista(listaDeFilmes);
 
         do {
-            if (escolha < 1 || escolha > 250) {
-                System.out.println("Opção inválida! Escolha entre 1 e 250");
-            } else {
-                validador = true;
+            System.out.print("Digite a posição de um filme para classificá-lo: ");
+            escolha = scan.nextInt();
+            validador = isValid(escolha, 1, 250);
+
+            if (!validador) {
+                System.out.println("Digite um numero entre 1 e 250");
+            }else{
                 escolha--;
             }
-        } while (validador == false);
+        } while (!validador);
 
         var filme = listaDeFilmes.get(escolha);
-        System.out.println("Filme escolhido:    " + filme.get("title"));
-        System.out.println("Nota atual:         " + filme.get("imDbRating"));
+
+        printFilme(filme, escolha);
+
         System.out.println("\nQual nota você da para esse filme? ");
         float minhaNota = scan.nextFloat();
         filme.put("imDbRating", String.valueOf(minhaNota));
-        System.out.println(filme);
+        printFilme(filme, escolha);
     }
 }
