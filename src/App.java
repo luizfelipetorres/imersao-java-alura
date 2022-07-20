@@ -45,15 +45,19 @@ public class App {
     }
 
     private static void printFilme(Map<String, String> filme, int posicao) {
+        final String STAR   = "\u2B50";
+        final String COLOR  = "\u001b[37m\u001b[41m";
+        final String BREAK  = "\u001b[m";
+
         System.out.println("Posição:    " + ++posicao);
-        System.out.println("Filme:      \u001b[37m\u001b[41m" + filme.get("title") + "\u001b[m");
+        System.out.println("Filme:      " + COLOR + filme.get("title") + BREAK);
         System.out.println("Poster:     " + filme.get("image"));
         float nota = Float.parseFloat(filme.get("imDbRating"));
         System.out.println("Nota:       " + filme.get("imDbRating"));
 
         // Imprimir estrelas
         for (int i = 0; i < nota; i++) {
-            System.out.print("\u2B50");
+            System.out.print(STAR);
         }
         System.out.printf("\n\n");
     }
@@ -80,6 +84,7 @@ public class App {
         // Imprimir lista
         printLista(listaDeFilmes);
 
+        // Capturar posição do filme
         do {
             System.out.print("Digite a posição de um filme para classificá-lo: ");
             escolha = scan.nextInt();
@@ -92,10 +97,11 @@ public class App {
             }
         } while (!validador);
 
+        // Separar e imprimir fime escolhido
         var filme = listaDeFilmes.get(escolha);
-
         printFilme(filme, escolha);
 
+        //Capturar nota, atribuir e imprimir
         System.out.println("\nQual nota você da para esse filme? ");
         float minhaNota = scan.nextFloat();
         filme.put("imDbRating", String.valueOf(minhaNota));
